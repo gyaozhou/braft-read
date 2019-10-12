@@ -1,11 +1,11 @@
 // Copyright (c) 2018 Baidu.com, Inc. All Rights Reserved
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,7 +24,7 @@
 DEFINE_bool(check_term, true, "Check if the leader changed to another term");
 DEFINE_bool(disable_cli, false, "Don't allow raft_cli access this node");
 DEFINE_bool(log_applied_task, false, "Print notice log when a task is applied");
-DEFINE_int32(election_timeout_ms, 5000, 
+DEFINE_int32(election_timeout_ms, 5000,
             "Start election in such milliseconds if disconnect with the leader");
 DEFINE_int32(port, 8100, "Listen port of this peer");
 DEFINE_int32(snapshot_interval, 30, "Interval between each snapshot");
@@ -38,7 +38,7 @@ class Counter;
 // Implements Closure which encloses RPC stuff
 class FetchAddClosure : public braft::Closure {
 public:
-    FetchAddClosure(Counter* counter, 
+    FetchAddClosure(Counter* counter,
                     const FetchAddRequest* request,
                     CounterResponse* response,
                     google::protobuf::Closure* done)
@@ -59,6 +59,7 @@ private:
     google::protobuf::Closure* _done;
 };
 
+// zhou:
 // Implementation of example::Counter as a braft::StateMachine.
 class Counter : public braft::StateMachine {
 public:
@@ -71,10 +72,12 @@ public:
         delete _node;
     }
 
+    // zhou: README,
     // Starts this node
     int start() {
         butil::EndPoint addr(butil::my_ip(), FLAGS_port);
         braft::NodeOptions node_options;
+
         if (node_options.initial_conf.parse_from(FLAGS_conf) != 0) {
             LOG(ERROR) << "Fail to parse configuration `" << FLAGS_conf << '\'';
             return -1;
@@ -88,6 +91,8 @@ public:
         node_options.raft_meta_uri = prefix + "/raft_meta";
         node_options.snapshot_uri = prefix + "/snapshot";
         node_options.disable_cli = FLAGS_disable_cli;
+
+        // zhou:
         braft::Node* node = new braft::Node(FLAGS_group, braft::PeerId(addr));
         if (node->init(node_options) != 0) {
             LOG(ERROR) << "Fail to init raft node";
@@ -107,7 +112,7 @@ public:
         // peers in the group receive this request as well.
         // Notice that _value can't be modified in this routine otherwise it
         // will be inconsistent with others in this group.
-        
+
         // Serialize request to IOBuf
         const int64_t term = _leader_term.load(butil::memory_order_relaxed);
         if (term < 0) {
@@ -136,7 +141,7 @@ public:
     }
 
     void get(CounterResponse* response) {
-        // In consideration of consistency. GetRequest to follower should be 
+        // In consideration of consistency. GetRequest to follower should be
         // rejected.
         if (!is_leader()) {
             // This node is a follower or it's not up-to-date. Redirect to
@@ -149,7 +154,7 @@ public:
         response->set_value(_value.load(butil::memory_order_relaxed));
     }
 
-    bool is_leader() const 
+    bool is_leader() const
     { return _leader_term.load(butil::memory_order_acquire) > 0; }
 
     // Shut this node down.
@@ -181,7 +186,7 @@ friend class FetchAddClosure;
 
     // @braft::StateMachine
     void on_apply(braft::Iterator& iter) {
-        // A batch of tasks are committed, which must be processed through 
+        // A batch of tasks are committed, which must be processed through
         // |iter|
         for (; iter.valid(); iter.next()) {
             int64_t detal_value = 0;
@@ -205,7 +210,7 @@ friend class FetchAddClosure;
 
             // Now the log has been parsed. Update this state machine by this
             // operation.
-            const int64_t prev = _value.fetch_add(detal_value, 
+            const int64_t prev = _value.fetch_add(detal_value,
                                                   butil::memory_order_relaxed);
             if (response) {
                 response->set_success(true);
@@ -215,7 +220,7 @@ friend class FetchAddClosure;
             // The purpose of following logs is to help you understand the way
             // this StateMachine works.
             // Remove these logs in performance-sensitive servers.
-            LOG_IF(INFO, FLAGS_log_applied_task) 
+            LOG_IF(INFO, FLAGS_log_applied_task)
                     << "Added value=" << prev << " by detal=" << detal_value
                     << " at log_index=" << iter.index();
         }
@@ -325,10 +330,15 @@ void FetchAddClosure::Run() {
     _counter->redirect(_response);
 }
 
+// zhou: message generate "class Snapshot : public ::google::protobuf::Message {"
+//       service generate "class CounterService : public ::google::protobuf::Service {"
+//
 // Implements example::CounterService if you are using brpc.
 class CounterServiceImpl : public CounterService {
 public:
     explicit CounterServiceImpl(Counter* counter) : _counter(counter) {}
+
+    // zhou: how brpc understand client rpc request and invoke this function???
     void fetch_add(::google::protobuf::RpcController* controller,
                    const ::example::FetchAddRequest* request,
                    ::example::CounterResponse* response,
@@ -349,20 +359,29 @@ private:
 }  // namespace example
 
 int main(int argc, char* argv[]) {
+
+    // zhou: google gflag to parse arguments.
     GFLAGS_NS::ParseCommandLineFlags(&argc, &argv, true);
+
     butil::AtExitManager exit_manager;
 
+    // zhou: create brpc framework object.
     // Generally you only need one Server.
     brpc::Server server;
+
     example::Counter counter;
     example::CounterServiceImpl service(&counter);
 
+    // zhou: add counter service into RPC framework
     // Add your service into RPC server
-    if (server.AddService(&service, 
+    if (server.AddService(&service,
                           brpc::SERVER_DOESNT_OWN_SERVICE) != 0) {
         LOG(ERROR) << "Fail to add service";
         return -1;
     }
+
+    // zhou: class braft will invoke brpc::AddService().
+
     // raft can share the same RPC server. Notice the second parameter, because
     // adding services into a running server is not allowed and the listen
     // address of this server is impossible to get before the server starts. You
@@ -371,6 +390,8 @@ int main(int argc, char* argv[]) {
         LOG(ERROR) << "Fail to add raft service";
         return -1;
     }
+
+    // zhou: start RPC Framework on port "FLAGS_port"
 
     // It's recommended to start the server before Counter is started to avoid
     // the case that it becomes the leader while the service is unreacheable by

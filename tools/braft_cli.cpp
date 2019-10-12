@@ -1,11 +1,11 @@
 // Copyright (c) 2018 Baidu.com, Inc. All Rights Reserved
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,13 +15,17 @@
 // Authors: Zhangyi Chen(chenzhangyi01@baidu.com)
 
 #include <map>                  // std::map
+
+// zhou: similar to getopt(), used to parse arguments.
 #include <gflags/gflags.h>      // google::ParseCommandLineFlags
+
 #include <butil/string_printf.h>
 #include <braft/cli.h>          // raft::cli::*
 
 namespace braft {
 namespace cli {
 
+// zhou: options collections for command "add_peer", "remove_peer", ...
 DEFINE_int32(timeout_ms, -1, "Timeout (in milliseconds) of the operation");
 DEFINE_int32(max_retry, 3, "Max retry times of each operation");
 DEFINE_string(conf, "", "Current configuration of the raft group");
@@ -38,22 +42,27 @@ DEFINE_string(group, "", "Id of the raft group");
     } while (0);                                                        \
 
 int add_peer() {
+    // zhou: such options are required by cmd "add_peer".
     CHECK_FLAG(conf);
     CHECK_FLAG(peer);
     CHECK_FLAG(group);
+
     Configuration conf;
     if (conf.parse_from(FLAGS_conf) != 0) {
         LOG(ERROR) << "Fail to parse --conf=`" << FLAGS_conf << '\'';
         return -1;
     }
+
     PeerId new_peer;
     if (new_peer.parse(FLAGS_peer) != 0) {
         LOG(ERROR) << "Fail to parse --peer=`" << FLAGS_peer<< '\'';
         return -1;
     }
+
     CliOptions opt;
     opt.timeout_ms = FLAGS_timeout_ms;
     opt.max_retry = FLAGS_max_retry;
+
     butil::Status st = add_peer(FLAGS_group, conf, new_peer, opt);
     if (!st.ok()) {
         LOG(ERROR) << "Fail to add_peer : " << st;
@@ -207,13 +216,19 @@ int run_command(const std::string& cmd) {
 }  // namespace cli
 }  // namespace raft
 
+// zhou: cli tool for cluster membership management.
 int main(int argc , char* argv[]) {
+
     const char* proc_name = strrchr(argv[0], '/');
+
     if (proc_name == NULL) {
+        // zhou: "cmd xxx xxx"
         proc_name = argv[0];
     } else {
+        // zhou: "./cmd xxx xxx"
         ++proc_name;
     }
+
     std::string help_str;
     butil::string_printf(&help_str,
                         "Usage: %s [Command] [OPTIONS...]\n"
@@ -229,11 +244,17 @@ int main(int argc , char* argv[]) {
                         "  snapshot --group=$group_id --peer=$target_peer\n"
                         "  transfer_leader --group=$group_id --peer=$target_leader --conf=$current_conf\n",
                         proc_name);
+
     GFLAGS_NS::SetUsageMessage(help_str);
+    // zhou: will consume and remove all predefined options. Only "cmd add_peer"
+    //       left for example.
     GFLAGS_NS::ParseCommandLineFlags(&argc, &argv, true);
+
     if (argc != 2) {
         std::cerr << help_str;
         return -1;
     }
+
+    // zhou: don't care about this programe name, just "add_peer", ...
     return braft::cli::run_command(argv[1]);
 }

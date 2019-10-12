@@ -54,6 +54,9 @@ fi
 
 export TCMALLOC_SAMPLE_PARAMETER=524288
 
+# zhou: "bthread_concurrency", "crash_on_fatal_log" are used by brpc.
+#       "raft_max_segment_size", "raft_sync" are used by braft.
+#       "port" is used by client app "counter".
 for ((i=0; i<$FLAGS_server_num; ++i)); do
     mkdir -p runtime/$i
     cp ./counter_server runtime/$i

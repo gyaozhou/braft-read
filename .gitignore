@@ -31,3 +31,8 @@ compile_commands.json
 CTestTestfile.cmake
 /build
 /third-party
+
+
+TAGS
+cscope.files
+cscope.out

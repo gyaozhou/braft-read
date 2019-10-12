@@ -1,11 +1,11 @@
 // Copyright (c) 2015 Baidu.com, Inc. All Rights Reserved
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,6 +32,7 @@ namespace braft {
 
 typedef std::string GroupId;
 
+// zhou:
 // Represent a participant in a replicating group.
 struct PeerId {
     butil::EndPoint addr; // ip+port.
@@ -40,7 +41,7 @@ struct PeerId {
     PeerId() : idx(0) {}
     explicit PeerId(butil::EndPoint addr_) : addr(addr_), idx(0) {}
     PeerId(butil::EndPoint addr_, int idx_) : addr(addr_), idx(idx_) {}
-    /*intended implicit*/PeerId(const std::string& str) 
+    /*intended implicit*/PeerId(const std::string& str)
     { CHECK_EQ(0, parse(str)); }
     PeerId(const PeerId& id) : addr(id.addr), idx(id.idx) {}
 
@@ -171,7 +172,7 @@ public:
     const_iterator begin() const { return _peers.begin(); }
     const_iterator end() const { return _peers.end(); }
 
-    // Clear the container and put peers in. 
+    // Clear the container and put peers in.
     void list_peers(std::set<PeerId>* peers) const {
         peers->clear();
         *peers = _peers;
@@ -241,7 +242,7 @@ public:
         }
         return true;
     }
-    
+
     // Get the difference between |*this| and |rhs|
     // |included| would be assigned to |*this| - |rhs|
     // |excluded| would be assigned to |rhs| - |*this|
@@ -250,11 +251,11 @@ public:
                Configuration* excluded) const {
         *included = *this;
         *excluded = rhs;
-        for (std::set<PeerId>::const_iterator 
+        for (std::set<PeerId>::const_iterator
                 iter = _peers.begin(); iter != _peers.end(); ++iter) {
             excluded->_peers.erase(*iter);
         }
-        for (std::set<PeerId>::const_iterator 
+        for (std::set<PeerId>::const_iterator
                 iter = rhs._peers.begin(); iter != rhs._peers.end(); ++iter) {
             included->_peers.erase(*iter);
         }
@@ -263,7 +264,7 @@ public:
     // Parse Configuration from a string into |this|
     // Returns 0 on success, -1 otherwise
     int parse_from(butil::StringPiece conf);
-    
+
 private:
     std::set<PeerId> _peers;
 

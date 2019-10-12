@@ -1,11 +1,11 @@
 // Copyright (c) 2015 Baidu.com, Inc. All Rights Reserved
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,10 +28,14 @@ RaftServiceImpl::~RaftServiceImpl() {
     NodeManager::GetInstance()->remove_address(_addr);
 }
 
+// zhou: README, RPC framework server received PreVoteRequestRPC.
+//       will hand over to "NodeImpl::handle_pre_vote_request()"
 void RaftServiceImpl::pre_vote(google::protobuf::RpcController* cntl_base,
                           const RequestVoteRequest* request,
                           RequestVoteResponse* response,
                           google::protobuf::Closure* done) {
+
+    // zhou: it will make sure done->Run() invoked before function return.
     brpc::ClosureGuard done_guard(done);
     brpc::Controller* cntl =
         static_cast<brpc::Controller*>(cntl_base);
@@ -58,10 +62,12 @@ void RaftServiceImpl::pre_vote(google::protobuf::RpcController* cntl_base,
     }
 }
 
+// zhou:
 void RaftServiceImpl::request_vote(google::protobuf::RpcController* cntl_base,
                           const RequestVoteRequest* request,
                           RequestVoteResponse* response,
                           google::protobuf::Closure* done) {
+
     brpc::ClosureGuard done_guard(done);
     brpc::Controller* cntl =
         static_cast<brpc::Controller*>(cntl_base);
@@ -87,10 +93,12 @@ void RaftServiceImpl::request_vote(google::protobuf::RpcController* cntl_base,
     }
 }
 
+// zhou:
 void RaftServiceImpl::append_entries(google::protobuf::RpcController* cntl_base,
                             const AppendEntriesRequest* request,
                             AppendEntriesResponse* response,
                             google::protobuf::Closure* done) {
+
     brpc::ClosureGuard done_guard(done);
     brpc::Controller* cntl =
         static_cast<brpc::Controller*>(cntl_base);
@@ -109,14 +117,17 @@ void RaftServiceImpl::append_entries(google::protobuf::RpcController* cntl_base,
         return;
     }
 
-    return node->handle_append_entries_request(cntl, request, response, 
+    return node->handle_append_entries_request(cntl, request, response,
                                                done_guard.release());
 }
 
+// zhou:
 void RaftServiceImpl::install_snapshot(google::protobuf::RpcController* cntl_base,
                               const InstallSnapshotRequest* request,
                               InstallSnapshotResponse* response,
                               google::protobuf::Closure* done) {
+
+
     brpc::Controller* cntl =
         static_cast<brpc::Controller*>(cntl_base);
 

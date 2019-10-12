@@ -1,11 +1,11 @@
 // Copyright (c) 2016 Baidu.com, Inc. All Rights Reserved
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -127,6 +127,7 @@ void RepeatedTimerTask::on_timedout(void* arg) {
 void RepeatedTimerTask::schedule(std::unique_lock<raft_mutex_t>& lck) {
     _next_duetime =
             butil::milliseconds_from_now(adjust_timeout_ms(_timeout_ms));
+
     if (bthread_timer_add(&_timer, _next_duetime, on_timedout, this) != 0) {
         lck.unlock();
         LOG(ERROR) << "Fail to add timer";
@@ -208,4 +209,3 @@ void RepeatedTimerTask::describe(std::ostream& os, bool use_html) {
 }
 
 }  //  namespace braft
-
