@@ -1,11 +1,11 @@
 // Copyright (c) 2015 Baidu.com, Inc. All Rights Reserved
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -42,7 +42,8 @@ void NodeManager::remove_address(butil::EndPoint addr) {
     _addr_set.erase(addr);
 }
 
-int NodeManager::add_service(brpc::Server* server, 
+// zhou: add RPC server side to Brpc.
+int NodeManager::add_service(brpc::Server* server,
                              const butil::EndPoint& listen_address) {
     if (server == NULL) {
         LOG(ERROR) << "server is NULL";
@@ -58,7 +59,7 @@ int NodeManager::add_service(brpc::Server* server,
     }
 
     if (0 != server->AddService(
-                new RaftServiceImpl(listen_address), 
+                new RaftServiceImpl(listen_address),
                 brpc::SERVER_OWNS_SERVICE)) {
         LOG(ERROR) << "Fail to add RaftService";
         return -1;
@@ -100,7 +101,7 @@ size_t NodeManager::_remove_node(Maps& m, const NodeImpl* node) {
         return 0;
     }
     m.node_map.erase(iter);
-    std::pair<GroupMap::iterator, GroupMap::iterator> 
+    std::pair<GroupMap::iterator, GroupMap::iterator>
             range = m.group_map.equal_range(node->node_id().group_id);
     for (GroupMap::iterator it = range.first; it != range.second; ++it) {
         if (it->second == node) {
@@ -145,7 +146,7 @@ void NodeManager::get_nodes_by_group_id(
     if (_nodes.Read(&ptr) != 0) {
         return;
     }
-    std::pair<GroupMap::const_iterator, GroupMap::const_iterator> 
+    std::pair<GroupMap::const_iterator, GroupMap::const_iterator>
             range = ptr->group_map.equal_range(group_id);
     for (GroupMap::const_iterator it = range.first; it != range.second; ++it) {
         nodes->push_back(it->second);
@@ -159,11 +160,10 @@ void NodeManager::get_all_nodes(std::vector<scoped_refptr<NodeImpl> >* nodes) {
         return;
     }
     nodes->reserve(ptr->group_map.size());
-    for (GroupMap::const_iterator 
+    for (GroupMap::const_iterator
             it = ptr->group_map.begin(); it != ptr->group_map.end(); ++it) {
         nodes->push_back(it->second);
     }
 }
 
 }  //  namespace braft
-

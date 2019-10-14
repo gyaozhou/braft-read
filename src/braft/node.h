@@ -88,6 +88,7 @@ private:
 
 
 // zhou: class NodeImpl, inherit from a thread safe reference count.
+//       RPC client side.
 class BAIDU_CACHELINE_ALIGNMENT NodeImpl
         : public butil::RefCountedThreadSafe<NodeImpl> {
 
@@ -419,6 +420,7 @@ private:
     PeerId _leader_id;
     PeerId _voted_id;
     Ballot _vote_ctx;
+    // zhou: collect granted state from nodes in Replication Group.
     Ballot _pre_vote_ctx;
     ConfigurationEntry _conf;
 

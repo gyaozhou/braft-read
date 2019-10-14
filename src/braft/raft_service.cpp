@@ -80,6 +80,7 @@ void RaftServiceImpl::request_vote(google::protobuf::RpcController* cntl_base,
 
     scoped_refptr<NodeImpl> node_ptr = NodeManager::GetInstance()->get(request->group_id(),
                                                                        peer_id);
+    // zhou: always has to get "class NodeImpl"
     NodeImpl* node = node_ptr.get();
     if (!node) {
         cntl->SetFailed(ENOENT, "peer_id not exist");

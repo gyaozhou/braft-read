@@ -996,7 +996,7 @@ void NodeImpl::handle_election_timeout() {
                                     _leader_id.to_string().c_str());
     reset_leader_id(empty_id, status);
 
-    // zhou:
+    // zhou: send PreVote RPC
     return pre_vote(&lck);
 
     // Don't touch any thing of *this ever after
@@ -1250,6 +1250,7 @@ void NodeImpl::handle_vote_timeout() {
     }
 }
 
+// zhou: handle response of offical Vote
 void NodeImpl::handle_request_vote_response(const PeerId& peer_id, const int64_t term,
                                             const RequestVoteResponse& response) {
     BAIDU_SCOPED_LOCK(_mutex);
@@ -1283,9 +1284,12 @@ void NodeImpl::handle_request_vote_response(const PeerId& peer_id, const int64_t
     LOG(INFO) << "node " << _group_id << ":" << _server_id
               << " received RequestVoteResponse from " << peer_id
               << " term " << response.term() << " granted " << response.granted();
+
     // check if the quorum granted
     if (response.granted()) {
         _vote_ctx.grant(peer_id);
+
+        // zhou: win the campaign
         if (_vote_ctx.granted()) {
             become_leader();
         }
@@ -1322,6 +1326,7 @@ struct OnRequestVoteRPCDone : public google::protobuf::Closure {
     NodeImpl* node;
 };
 
+// zhou: handle response of prevote
 void NodeImpl::handle_pre_vote_response(const PeerId& peer_id, const int64_t term,
                                             const RequestVoteResponse& response) {
     std::unique_lock<raft_mutex_t> lck(_mutex);
@@ -1357,7 +1362,10 @@ void NodeImpl::handle_pre_vote_response(const PeerId& peer_id, const int64_t ter
               << " term " << response.term() << " granted " << response.granted();
     // check if the quorum granted
     if (response.granted()) {
+        // zhou: set the grant state for this remote node.
         _pre_vote_ctx.grant(peer_id);
+
+        // zhou: received enough grant.
         if (_pre_vote_ctx.granted()) {
             elect_self(&lck);
         }
@@ -1376,7 +1384,9 @@ struct OnPreVoteRPCDone : public google::protobuf::Closure {
         node->Release();
     }
 
+    // zhou: invoked when received response of PreVoteRPC
     void Run() {
+
         do {
             if (cntl.ErrorCode() != 0) {
                 LOG(WARNING) << "node " << node->node_id()
@@ -1386,6 +1396,7 @@ struct OnPreVoteRPCDone : public google::protobuf::Closure {
             }
             node->handle_pre_vote_response(peer, term, response);
         } while (0);
+
         delete this;
     }
 
@@ -1397,7 +1408,7 @@ struct OnPreVoteRPCDone : public google::protobuf::Closure {
     NodeImpl* node;
 };
 
-// zhou: README, send PreVoteRequestRPC
+// zhou: README, prevote send message VoteRequestRPC also, without increase term.
 void NodeImpl::pre_vote(std::unique_lock<raft_mutex_t>* lck) {
 
     LOG(INFO) << "node " << _group_id << ":" << _server_id
@@ -1430,16 +1441,24 @@ void NodeImpl::pre_vote(std::unique_lock<raft_mutex_t>* lck) {
     }
 
     _pre_vote_ctx.init(_conf.conf, _conf.stable() ? NULL : &_conf.old_conf);
+
     std::set<PeerId> peers;
     _conf.list_peers(&peers);
+    // zhou: go through all nodes in this replication group.
     for (std::set<PeerId>::const_iterator
             iter = peers.begin(); iter != peers.end(); ++iter) {
+
+        // zhou: ignore this node itself.
         if (*iter == _server_id) {
             continue;
         }
+
+        // zhou: a single long time connection shared with all clients in this
+        //       process, with one server.
         brpc::ChannelOptions options;
         options.connection_type = brpc::CONNECTION_TYPE_SINGLE;
         options.max_retry = 0;
+
         brpc::Channel channel;
         if (0 != channel.Init(iter->addr, &options)) {
             LOG(WARNING) << "node " << _group_id << ":" << _server_id
@@ -1447,6 +1466,7 @@ void NodeImpl::pre_vote(std::unique_lock<raft_mutex_t>* lck) {
             continue;
         }
 
+        // zhou: response message for sending prevote
         OnPreVoteRPCDone* done = new OnPreVoteRPCDone(*iter, _current_term, this);
 
         done->cntl.set_timeout_ms(_options.election_timeout_ms);
@@ -1457,9 +1477,12 @@ void NodeImpl::pre_vote(std::unique_lock<raft_mutex_t>* lck) {
         done->request.set_last_log_index(last_log_id.index);
         done->request.set_last_log_term(last_log_id.term);
 
+        // zhou: channel->CallMethod(...),
         RaftService_Stub stub(&channel);
         stub.pre_vote(&done->cntl, &done->request, &done->response, done);
     }
+
+    // zhou: grant this node itself
     _pre_vote_ctx.grant(_server_id);
 
     if (_pre_vote_ctx.granted()) {
@@ -1467,9 +1490,10 @@ void NodeImpl::pre_vote(std::unique_lock<raft_mutex_t>* lck) {
     }
 }
 
-// zhou: README, send VoteRequestRPC
+// zhou: README, prevote success, send VoteRequestRPC with Term increased.
 // in lock
 void NodeImpl::elect_self(std::unique_lock<raft_mutex_t>* lck) {
+
     LOG(INFO) << "node " << _group_id << ":" << _server_id
               << " term " << _current_term << " start vote and grant vote self";
     if (!_conf.contains(_server_id)) {
@@ -1477,12 +1501,14 @@ void NodeImpl::elect_self(std::unique_lock<raft_mutex_t>* lck) {
                      << " can't do elect_self as it is not in " << _conf.conf;
         return;
     }
+
     // cancel follower election timer
     if (_state == STATE_FOLLOWER) {
         BRAFT_VLOG << "node " << _group_id << ":" << _server_id
                    << " term " << _current_term << " stop election_timer";
         _election_timer.stop();
     }
+
     // reset leader_id before vote
     PeerId empty_id;
     butil::Status status;
@@ -1492,6 +1518,7 @@ void NodeImpl::elect_self(std::unique_lock<raft_mutex_t>* lck) {
     reset_leader_id(empty_id, status);
 
     _state = STATE_CANDIDATE;
+    // zhou: offical vote.
     _current_term++;
     _voted_id = _server_id;
 
@@ -1518,6 +1545,7 @@ void NodeImpl::elect_self(std::unique_lock<raft_mutex_t>* lck) {
 
     for (std::set<PeerId>::const_iterator
         iter = peers.begin(); iter != peers.end(); ++iter) {
+
         if (*iter == _server_id) {
             continue;
         }
@@ -1547,6 +1575,7 @@ void NodeImpl::elect_self(std::unique_lock<raft_mutex_t>* lck) {
 
     //TODO: outof lock
     _meta_storage->set_term_and_votedfor(_current_term, _server_id);
+
     _vote_ctx.grant(_server_id);
     if (_vote_ctx.granted()) {
         become_leader();
@@ -1671,8 +1700,10 @@ void NodeImpl::check_step_down(const int64_t request_term, const PeerId& server_
     }
 }
 
+// zhou: become Leader
 // in lock
 void NodeImpl::become_leader() {
+
     CHECK(_state == STATE_CANDIDATE);
     LOG(INFO) << "node " << _group_id << ":" << _server_id
               << " term " << _current_term
@@ -1888,7 +1919,7 @@ int NodeImpl::handle_pre_vote_request(const RequestVoteRequest* request,
     return 0;
 }
 
-// zhou: README, handle received VoteRequestRPC
+// zhou: README, handle received VoteRequestRPC, vote request or prevote request
 int NodeImpl::handle_request_vote_request(const RequestVoteRequest* request,
                                           RequestVoteResponse* response) {
     std::unique_lock<raft_mutex_t> lck(_mutex);

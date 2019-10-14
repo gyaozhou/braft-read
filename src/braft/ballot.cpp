@@ -1,11 +1,11 @@
 // Copyright (c) 2018 Baidu.com, Inc. All Rights Reserved
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,6 +32,7 @@ int Ballot::init(const Configuration& conf, const Configuration* old_conf) {
             iter = conf.begin(); iter != conf.end(); ++iter) {
         _peers.push_back(*iter);
     }
+    // zhou: init as majority
     _quorum = _peers.size() / 2 + 1;
     if (!old_conf) {
         return 0;
@@ -46,6 +47,7 @@ int Ballot::init(const Configuration& conf, const Configuration* old_conf) {
 }
 
 Ballot::PosHint Ballot::grant(const PeerId& peer, PosHint hint) {
+
     std::vector<UnfoundPeerId>::iterator iter;
     iter = find_peer(peer, _peers, hint.pos0);
     if (iter != _peers.end()) {

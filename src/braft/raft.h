@@ -539,7 +539,7 @@ inline NodeOptions::NodeOptions()
 
 class NodeImpl;
 
-// zhou: README,
+// zhou: README, used to manage replication group?
 class Node {
 public:
     Node(const GroupId& group_id, const PeerId& peer_id);
