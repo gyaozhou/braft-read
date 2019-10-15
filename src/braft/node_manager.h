@@ -26,7 +26,7 @@ namespace braft {
 
 class NodeImpl;
 
-// zhou:
+// zhou: Replication Group management.
 class NodeManager {
 public:
     // zhou: README,

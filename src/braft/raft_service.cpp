@@ -28,7 +28,7 @@ RaftServiceImpl::~RaftServiceImpl() {
     NodeManager::GetInstance()->remove_address(_addr);
 }
 
-// zhou: README, RPC framework server received PreVoteRequestRPC.
+// zhou: RPC framework server received PreVoteRequestRPC.
 //       will hand over to "NodeImpl::handle_pre_vote_request()"
 void RaftServiceImpl::pre_vote(google::protobuf::RpcController* cntl_base,
                           const RequestVoteRequest* request,

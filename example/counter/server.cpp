@@ -372,7 +372,7 @@ int main(int argc, char* argv[]) {
     example::Counter counter;
     example::CounterServiceImpl service(&counter);
 
-    // zhou: add counter service into RPC framework
+    // zhou: add counter service into RPC server
     // Add your service into RPC server
     if (server.AddService(&service,
                           brpc::SERVER_DOESNT_OWN_SERVICE) != 0) {
@@ -380,7 +380,8 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // zhou: class braft will invoke brpc::AddService().
+    // zhou: add Braft related service implementation into RPC server
+    //       braft::add_server() invoke brpc::Server.AddService() finnally.
 
     // raft can share the same RPC server. Notice the second parameter, because
     // adding services into a running server is not allowed and the listen

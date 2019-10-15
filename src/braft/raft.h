@@ -187,7 +187,8 @@ friend class FSMCaller;
     IteratorImpl* _impl;
 };
 
-// zhou: README,
+// zhou: README, client logic to process commited log entries.
+//       APP should inherit from it.
 
 // |StateMachine| is the sink of all the events of a very raft node.
 // Implement a specific StateMachine for your own business logic.
@@ -539,7 +540,7 @@ inline NodeOptions::NodeOptions()
 
 class NodeImpl;
 
-// zhou: README, used to manage replication group?
+// zhou: README, interface to handle client's request or admin's command.
 class Node {
 public:
     Node(const GroupId& group_id, const PeerId& peer_id);

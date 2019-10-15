@@ -1,11 +1,11 @@
 // Copyright (c) 2015 Baidu.com, Inc. All Rights Reserved
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,7 +31,7 @@
 
 namespace braft {
 
-class BAIDU_CACHELINE_ALIGNMENT Segment 
+class BAIDU_CACHELINE_ALIGNMENT Segment
         : public butil::RefCountedThreadSafe<Segment> {
 public:
     Segment(const std::string& path, const int64_t first_index, int checksum_type)
@@ -110,7 +110,7 @@ friend class butil::RefCountedThreadSafe<Segment>;
         int64_t term;
     };
 
-    int _load_entry(off_t offset, EntryHeader *head, butil::IOBuf *body, 
+    int _load_entry(off_t offset, EntryHeader *head, butil::IOBuf *body,
                     size_t size_hint) const;
 
     int _get_meta(int64_t index, LogMeta* meta) const;
@@ -127,6 +127,8 @@ friend class butil::RefCountedThreadSafe<Segment>;
     int _checksum_type;
     std::vector<std::pair<int64_t/*offset*/, int64_t/*term*/> > _offset_and_term;
 };
+
+// zhou: a method to implement how to persistent store log entries.
 
 // LogStorage use segmented append-only file, all data in disk, all index in memory.
 // append one log entry, only cause one disk write, every disk write will call fsync().
@@ -145,7 +147,7 @@ public:
         , _last_log_index(0)
         , _checksum_type(0)
         , _enable_sync(enable_sync)
-    {} 
+    {}
 
     SegmentLogStorage()
         : _first_log_index(1)
@@ -204,7 +206,7 @@ private:
     int load_segments(ConfigurationManager* configuration_manager);
     int get_segment(int64_t log_index, scoped_refptr<Segment>* ptr);
     void pop_segments(
-            int64_t first_index_kept, 
+            int64_t first_index_kept,
             std::vector<scoped_refptr<Segment> >* poped);
     void pop_segments_from_back(
             const int64_t first_index_kept,

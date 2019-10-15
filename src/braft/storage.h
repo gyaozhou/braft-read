@@ -42,8 +42,9 @@ DECLARE_bool(raft_create_parent_directories);
 
 struct LogEntry;
 
-// zhou: Server State, includes "log[]",
+// zhou: persistent store log entries.
 class LogStorage {
+
 public:
     virtual ~LogStorage() {}
 
@@ -86,7 +87,7 @@ public:
     static LogStorage* create(const std::string& uri);
 };
 
-// zhou: Server State, includes "currentTerm", "votedFor",
+// zhou: all metadata should be persistent stored.
 class RaftMetaStorage {
 public:
     virtual ~RaftMetaStorage() {}

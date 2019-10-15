@@ -43,6 +43,7 @@ void NodeManager::remove_address(butil::EndPoint addr) {
 }
 
 // zhou: add RPC server side to Brpc.
+//       All other *.proto files only define messages, no more service.
 int NodeManager::add_service(brpc::Server* server,
                              const butil::EndPoint& listen_address) {
     if (server == NULL) {
@@ -53,11 +54,13 @@ int NodeManager::add_service(brpc::Server* server,
         return 0;
     }
 
+    // zhou: add RPC servicer FileServiceImpl, refer to file_service.proto
     if (0 != server->AddService(file_service(), brpc::SERVER_DOESNT_OWN_SERVICE)) {
         LOG(ERROR) << "Fail to add FileService";
         return -1;
     }
 
+    // zhou: add RPC server RaftServiceImpl, refer to raft.proto.
     if (0 != server->AddService(
                 new RaftServiceImpl(listen_address),
                 brpc::SERVER_OWNS_SERVICE)) {
@@ -65,10 +68,13 @@ int NodeManager::add_service(brpc::Server* server,
         return -1;
     }
 
+    // zhou: add RPC servicer RaftStatImpl, refer to builtin_service.proto
     if (0 != server->AddService(new RaftStatImpl, brpc::SERVER_OWNS_SERVICE)) {
         LOG(ERROR) << "Fail to add RaftStatService";
         return -1;
     }
+
+    // zhou: add RPC server CliServiceImpl, refer to cli.proto.
     if (0 != server->AddService(new CliServiceImpl, brpc::SERVER_OWNS_SERVICE)) {
         LOG(ERROR) << "Fail to add CliService";
         return -1;

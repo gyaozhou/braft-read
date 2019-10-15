@@ -87,8 +87,8 @@ private:
 
 
 
-// zhou: class NodeImpl, inherit from a thread safe reference count.
-//       RPC client side.
+// zhou: class NodeImpl, single node state change processing.
+//       Inherit from a thread safe reference count.
 class BAIDU_CACHELINE_ALIGNMENT NodeImpl
         : public butil::RefCountedThreadSafe<NodeImpl> {
 
