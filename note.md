@@ -1,4 +1,5 @@
 
+
 * class RaftService, generated from protobuf
 
 * class RaftServiceImpl, inherit from RaftService, just find instance of class NodeImpl, and invoke corresponding processing functions. Work as RPC Server side.
@@ -20,7 +21,7 @@
 
 # Interface
 
-
+raft.cpp/h defines class StateMachine, and class Node. should be inherit/operated by APP.
 
 # Implementation details
 

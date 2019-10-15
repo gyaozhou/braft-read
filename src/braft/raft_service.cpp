@@ -48,6 +48,11 @@ void RaftServiceImpl::pre_vote(google::protobuf::RpcController* cntl_base,
 
     scoped_refptr<NodeImpl> node_ptr = NodeManager::GetInstance()->get(request->group_id(),
                                                                        peer_id);
+
+    // zhou: it created when APP created it.
+    //       e.g. in counter/server.cpp, Counter::start():
+    //       "braft::Node* node = new braft::Node(FLAGS_group, braft::PeerId(addr));"
+    //       So, Brpc has to ignore the RPC request before APP/Braft can handle it.
     NodeImpl* node = node_ptr.get();
     if (!node) {
         cntl->SetFailed(ENOENT, "peer_id not exist");

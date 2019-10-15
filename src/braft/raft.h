@@ -669,6 +669,7 @@ public:
     bool readonly();
 
 private:
+    // zhou:
     NodeImpl* _impl;
 };
 

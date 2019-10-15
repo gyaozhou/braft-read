@@ -88,6 +88,7 @@ int add_service(brpc::Server* server, const char* listen_ip_and_port) {
     return add_service(server, addr);
 }
 
+// zhou:
 Node::Node(const GroupId& group_id, const PeerId& peer_id) {
     _impl = new NodeImpl(group_id, peer_id);
 }
@@ -113,6 +114,7 @@ bool Node::is_leader() {
     return _impl->is_leader();
 }
 
+// zhou: Node started.
 int Node::init(const NodeOptions& options) {
     return _impl->init(options);
 }

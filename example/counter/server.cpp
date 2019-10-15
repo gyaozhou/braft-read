@@ -92,8 +92,11 @@ public:
         node_options.snapshot_uri = prefix + "/snapshot";
         node_options.disable_cli = FLAGS_disable_cli;
 
-        // zhou:
+        // zhou: Braft service implementation invoked by RPC server can do nothing,
+        //       until the braft::Node created.
         braft::Node* node = new braft::Node(FLAGS_group, braft::PeerId(addr));
+
+        // zhou: Braft is ready to work.
         if (node->init(node_options) != 0) {
             LOG(ERROR) << "Fail to init raft node";
             delete node;
