@@ -433,7 +433,10 @@ private:
     LogStorage* _log_storage;
     RaftMetaStorage* _meta_storage;
     ClosureQueue* _closure_queue;
+
+    // zhou: Manager the history of configuration changing
     ConfigurationManager* _config_manager;
+
     LogManager* _log_manager;
     FSMCaller* _fsm_caller;
     BallotBox* _ballot_box;
@@ -441,7 +444,9 @@ private:
     ReplicatorGroup _replicator_group;
     std::vector<Closure*> _shutdown_continuations;
 
+    // zhou: monitor Leader state, Follower -> Candidate.
     ElectionTimer _election_timer;
+    // zhou: how long a campaign lasted.
     VoteTimer _vote_timer;
     StepdownTimer _stepdown_timer;
     SnapshotTimer _snapshot_timer;
@@ -450,6 +455,8 @@ private:
     StopTransferArg* _stop_transfer_arg;
     bool _vote_triggered;
     ReplicatorId _waking_candidate;
+
+    // zhou: ???
     bthread::ExecutionQueueId<LogEntryAndClosure> _apply_queue_id;
     bthread::ExecutionQueue<LogEntryAndClosure>::scoped_ptr_t _apply_queue;
     AppendEntriesCache* _append_entries_cache;

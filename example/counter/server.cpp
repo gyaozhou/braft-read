@@ -24,10 +24,12 @@
 DEFINE_bool(check_term, true, "Check if the leader changed to another term");
 DEFINE_bool(disable_cli, false, "Don't allow raft_cli access this node");
 DEFINE_bool(log_applied_task, false, "Print notice log when a task is applied");
+
 DEFINE_int32(election_timeout_ms, 5000,
             "Start election in such milliseconds if disconnect with the leader");
 DEFINE_int32(port, 8100, "Listen port of this peer");
 DEFINE_int32(snapshot_interval, 30, "Interval between each snapshot");
+
 DEFINE_string(conf, "", "Initial configuration of the replication group");
 DEFINE_string(data_path, "./data", "Path of data stored on");
 DEFINE_string(group, "Counter", "Id of the replication group");
@@ -82,6 +84,7 @@ public:
             LOG(ERROR) << "Fail to parse configuration `" << FLAGS_conf << '\'';
             return -1;
         }
+        // zhou: default 5000ms
         node_options.election_timeout_ms = FLAGS_election_timeout_ms;
         node_options.fsm = this;
         node_options.node_owns_fsm = false;
@@ -139,6 +142,7 @@ public:
             // ABA problem can be avoid if expected_term is set
             task.expected_term = term;
         }
+
         // Now the task is applied to the group, waiting for the result.
         return _node->apply(task);
     }
@@ -187,8 +191,12 @@ friend class FetchAddClosure;
         }
     }
 
+
+    // zhou: README,
+
     // @braft::StateMachine
     void on_apply(braft::Iterator& iter) {
+
         // A batch of tasks are committed, which must be processed through
         // |iter|
         for (; iter.valid(); iter.next()) {
@@ -210,6 +218,7 @@ friend class FetchAddClosure;
                 CHECK(request.ParseFromZeroCopyStream(&wrapper));
                 detal_value = request.value();
             }
+
 
             // Now the log has been parsed. Update this state machine by this
             // operation.

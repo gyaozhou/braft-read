@@ -1,11 +1,11 @@
 // Copyright (c) 2015 Baidu.com, Inc. All Rights Reserved
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -52,7 +52,7 @@ public:
     int64_t index() const { return _cur_index; }
     void run_the_rest_closure_with_error();
 private:
-    IteratorImpl(StateMachine* sm, LogManager* lm, 
+    IteratorImpl(StateMachine* sm, LogManager* lm,
                  std::vector<Closure*> *closure,
                  int64_t first_closure_index,
                  int64_t last_applied_index,
@@ -72,7 +72,7 @@ friend class FSMCaller;
 };
 
 struct FSMCallerOptions {
-    FSMCallerOptions() 
+    FSMCallerOptions()
         : log_manager(NULL)
         , fsm(NULL)
         , after_shutdown(NULL)
@@ -102,6 +102,7 @@ public:
     virtual SnapshotReader* start() = 0;
 };
 
+// zhou: README,
 class BAIDU_CACHELINE_ALIGNMENT FSMCaller {
 public:
     FSMCaller();
@@ -143,12 +144,12 @@ friend class IteratorImpl;
         union {
             // For applying log entry (including configuration change)
             int64_t committed_index;
-            
+
             // For on_leader_start
             int64_t term;
-            
+
             // For on_leader_stop
-            butil::Status* status;    
+            butil::Status* status;
 
             // For on_start_following and on_stop_following
             LeaderChangeContext* leader_change_context;

@@ -238,6 +238,7 @@ int NodeImpl::init_snapshot_storage() {
     return _snapshot_executor->init(opt);
 }
 
+// zhou: README,
 int NodeImpl::init_log_storage() {
     CHECK(_fsm_caller);
     if (_options.log_storage) {
@@ -258,6 +259,7 @@ int NodeImpl::init_log_storage() {
     return _log_manager->init(log_manager_options);
 }
 
+// zhou: README,
 int NodeImpl::init_meta_storage() {
     int ret = 0;
 
@@ -430,7 +432,7 @@ int NodeImpl::bootstrap(const BootstrapOptions& options) {
     return 0;
 }
 
-// zhou: README,
+// zhou: README, Node start
 int NodeImpl::init(const NodeOptions& options) {
     _options = options;
 
@@ -448,13 +450,17 @@ int NodeImpl::init(const NodeOptions& options) {
         return -1;
     }
 
+    // zhou: init such timers, NOT start.
+    //       election_timeout_ms == 5000ms
     CHECK_EQ(0, _vote_timer.init(this, options.election_timeout_ms));
     CHECK_EQ(0, _election_timer.init(this, options.election_timeout_ms));
     CHECK_EQ(0, _stepdown_timer.init(this, options.election_timeout_ms));
+
     CHECK_EQ(0, _snapshot_timer.init(this, options.snapshot_interval_s * 1000));
 
     _config_manager = new ConfigurationManager();
 
+    // zhou: README,
     if (bthread::execution_queue_start(&_apply_queue_id, NULL,
                                        execute_applying_tasks, this) != 0) {
         LOG(ERROR) << "node " << _group_id << ":" << _server_id
@@ -462,6 +468,7 @@ int NodeImpl::init(const NodeOptions& options) {
         return -1;
     }
 
+    // zhou: README,
     _apply_queue = execution_queue_address(_apply_queue_id);
     if (!_apply_queue) {
         LOG(ERROR) << "node " << _group_id << ":" << _server_id
@@ -491,6 +498,7 @@ int NodeImpl::init(const NodeOptions& options) {
                    << " init_fsm_caller failed";
         return -1;
     }
+
 
     // commitment manager init
     _ballot_box = new BallotBox();
@@ -570,6 +578,8 @@ int NodeImpl::init(const NodeOptions& options) {
         return -1;
     }
 
+
+
     // Now the raft node is started , have to acquire the lock to avoid race
     // conditions
     std::unique_lock<raft_mutex_t> lck(_mutex);
@@ -587,8 +597,10 @@ DEFINE_int32(raft_apply_batch, 32, "Max number of tasks that can be applied "
                                    " in a single batch");
 BRPC_VALIDATE_GFLAG(raft_apply_batch, ::brpc::PositiveInteger);
 
+// zhou: README,
 int NodeImpl::execute_applying_tasks(
         void* meta, bthread::TaskIterator<LogEntryAndClosure>& iter) {
+
     if (iter.is_queue_stopped()) {
         return 0;
     }
@@ -1585,6 +1597,7 @@ void NodeImpl::elect_self(std::unique_lock<raft_mutex_t>* lck) {
 // in lock
 void NodeImpl::step_down(const int64_t term, bool wakeup_a_candidate,
                          const butil::Status& status) {
+
     BRAFT_VLOG << "node " << _group_id << ":" << _server_id
               << " term " << _current_term
               << " stepdown from " << state2str(_state)
@@ -3133,7 +3146,8 @@ void NodeTimer::on_destroy() {
     }
 }
 
-// zhou: callback function, invoked when timer expired.
+// zhou: callback function, invoked when Election Timer expired.
+//       Follower -> Candidate
 void ElectionTimer::run() {
     // zhou: NodeTimer::_node
     _node->handle_election_timeout();
